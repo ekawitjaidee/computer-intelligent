@@ -149,13 +149,13 @@ def toarr(data):
 
 #NN
 class NN():
-  def __init__(self,weigths,hidden_node,hidden_layers,learningrate,bias):
+  def __init__(self,weigths,hidden_node,hidden_layers,learningrate,bias,momentumrate):
     self.hidden_node = hidden_node #[2,2]
     self.hidden_layers = hidden_layers #2
     self.weigths = weigths
     self.lr = learningrate
     self.bias = bias
-    
+    self.momentumrate = momentumrate    
 
   def feedfoward(self,data):
     # print(self.data)
@@ -164,23 +164,39 @@ class NN():
     feedlayer = []
     print(data)
     dotres = data
+
     for dotloop in range(self.hidden_layers+1): # test case มีสองhiddenlayer แสดงว่าต้องdot3ครั้ง จึงเท่ากับhiddenlayer+1
       # print(dotloop)
       # print(dotres)
       # print(weigths[dotloop])
-      # print(self.bias[dotloop][0])
+      # print(self.bias[dotloop])
+      print('before'+str(dotres))
       dotres = np.dot(dotres,self.weigths[dotloop]) 
+      # print(dotres)
       dotres = dotres + self.bias[dotloop][0]
+     
       # print('plus bias'+str(dotres))
       dotres = self.sigmoid(dotres)
-      feedlayer.append(dotres)
+      result = np.reshape(dotres,(len(dotres),1))
+      print('after'+str(dotres))
+      feedlayer.append(result)
       # print(dotres)
-    print(feedlayer)
-    return toarr(feedlayer) #sigmoid at hidden node and output node
+    # print(feedlayer)
+    return feedlayer #sigmoid at hidden node and output node
 
   def backward(self,yt,desire):
-    gd = self.diffsigmoid(yt) * self.errorrate(yt,desire) 
-    # print(gd)
+    print(yt)
+    
+    #re weigth before output node
+    outset = yt[1:]
+    outset = np.flip(outset)
+    # print(outset)
+    gdout = self.diffsigmoid(outset[0]) * self.errorrate(outset[0],desire)
+    deltaW = (-self.lr)*gdout*outset[1] 
+    print(deltaW)  
+    print(self.weigths[-1])
+    a = self.weigths[-1] + deltaW + self.momentumrate
+    print(a)
     # print(self.weigths)
     # for i in range(len(self.weigths[-1])):
       # print(i) #lr * gd * yt
@@ -198,8 +214,6 @@ class NN():
   def diffsigmoid(self, s):
     return (s) * (1 - (s))
 
-  def gradient(self):
-    return 0
       
 
 
@@ -217,6 +231,7 @@ class NN():
 hidden_layers = 2
 hidden_node = [2,2]
 learningrate = 0.2
+momentumrate = 0.2 
 
 #data
 data = splitdata(read_file('Flood_dataset.txt'))
@@ -236,14 +251,15 @@ train_y = toarr(train_y)
 # [print(x) for x in train]
 
 weigths = initial_weigths(train_x,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
+print(type(weigths[0]))
 bias = initial_bias(hidden_node,hidden_layers)
-print(bias)
-print(weigths)
+# print(bias)
+# print(weigths)
 
 
 
 #NN
-NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias)
+NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,momentumrate)
 # # for i in train_x:
 yt =  NN1.feedfoward(train_x[0])
 out = NN1.backward(yt,train_y[0])
