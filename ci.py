@@ -71,7 +71,7 @@ def initial_weigths(input_node,hidden_node,hidden_layer):
 
   layer_count = []
 
-  np.random.seed(1)
+  # np.random.seed(1)
   for i in range(len(hidden_node)):
     weigths = 2 * np.random.random((cp_node[i], hidden_node[i])) - 1
     # print(weigths)
@@ -84,7 +84,9 @@ def initial_bias(hidden_node,hidden_layer):
   resbias = []
   for i in range(len(hidden_node)):
     bias = 2 * np.random.random((1, hidden_node[i])) - 1
+    # print(bias.shape)
     resbias.append(bias)
+  # print(resbias)
   return resbias
 
 #tools
@@ -103,7 +105,8 @@ def findmin2D(data):
 #Data Manage
 def crossVar(data):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
   r = random.randrange(1,10)
-  r=1
+  
+  # r=1
   # print(r)
   test = []
 
@@ -149,20 +152,23 @@ def toarr(data):
 
 #NN
 class NN():
-  def __init__(self,weigths,hidden_node,hidden_layers,learningrate,bias,momentumrate):
+  def __init__(self,weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate):
     self.hidden_node = hidden_node #[2,2]
     self.hidden_layers = hidden_layers #2
     self.weigths = weigths
     self.lr = learningrate
     self.bias = bias
-    self.momentumrate = momentumrate    
+    self.biasweight = biasweight
+    self.momentumrate = momentumrate  
+    self.deltaWl = 0  
+    
 
   def feedfoward(self,data):
     # print(self.data)
-    # print(weigths)
+    # print(self.deltaWl)
    
     feedlayer = []
-    print(data)
+    # print(data)
     dotres = data
 
     for dotloop in range(self.hidden_layers+1): # test case มีสองhiddenlayer แสดงว่าต้องdot3ครั้ง จึงเท่ากับhiddenlayer+1
@@ -170,38 +176,107 @@ class NN():
       # print(dotres)
       # print(weigths[dotloop])
       # print(self.bias[dotloop])
-      print('before'+str(dotres))
+      # print(self.weigths)
+      # print('before'+str(dotres))
       dotres = np.dot(dotres,self.weigths[dotloop]) 
-      # print(dotres)
-      dotres = dotres + self.bias[dotloop][0]
-     
+      # print('dotress'+str(dotres))
+      # print('biasss'+str(self.bias[dotloop][0]))
+      # print(dotres.shape)
+      # print(self.bias[dotloop][0].shape)
+      
+      # dotres = dotres + (self.bias[dotloop][0] * self.biasweight[dotloop][0])
+      dotres = dotres +  self.biasweight[dotloop][0]
+      
       # print('plus bias'+str(dotres))
       dotres = self.sigmoid(dotres)
       result = np.reshape(dotres,(len(dotres),1))
-      print('after'+str(dotres))
+      # print('after'+str(result))
       feedlayer.append(result)
       # print(dotres)
-    # print(feedlayer)
+    # print('after'+str(feedlayer))
     return feedlayer #sigmoid at hidden node and output node
 
-  def backward(self,yt,desire):
-    print(yt)
-    
+  def backward(self,yt,desire,xinput,firstround):
+    # print('yt' +str(yt))
+    gdkeep  =[]    
+    deltaW = []
+    deltaWbias = []
+    tofinddeltaW = []
+    # tofinddeltaWinput = []
+    # tofinddeltaWinput.append(xinput)
+    # tofinddeltaW.append(yt[:-1])
+    [tofinddeltaW.append(i)for i in yt[:-1]]
+    tofinddeltaW = np.flip(tofinddeltaW)
+    # print('tofind'+ str(tofinddeltaW[0]))
+    #gradient
     #re weigth before output node
+    ytflip = np.flip(yt)
     outset = yt[1:]
     outset = np.flip(outset)
-    # print(outset)
+  
+    # print('Error = '+str(self.errorrate(outset[0],desire)))
+    
     gdout = self.diffsigmoid(outset[0]) * self.errorrate(outset[0],desire)
-    deltaW = (-self.lr)*gdout*outset[1] 
-    print(deltaW)  
-    print(self.weigths[-1])
-    a = self.weigths[-1] + deltaW + self.momentumrate
-    print(a)
-    # print(self.weigths)
-    # for i in range(len(self.weigths[-1])):
-      # print(i) #lr * gd * yt
+    gdkeep.append(gdout)
 
-    return 0
+    hiddenout = yt[:-1]
+    hiddenout = np.flip(hiddenout)
+    
+
+    gdhd = []
+    hdweight = np.flip(self.weigths)
+    # print('gdout'+str(gdout[0][0]))
+    # print('hiddenoutput'+str(self.diffsigmoid(hiddenout[0])))
+    # print('hdweight'+str(hdweight))
+    # print('gdkeep'+str(gdkeep))
+    # print('hiddenout'+str(hiddenout))
+    # print(hdweight[0]*hiddenout[0]*gdout[0])
+    # print('เวดดดดด'+str(hdweight))
+    # print('yhidden'+str(hiddenout))
+    for i in range(len(hiddenout)):
+    # print(self.diffsigmoid(hiddenout[0][0]))
+    # print(gdbefore[0])
+      gdkeep.append(np.dot(hdweight[i] ,gdkeep[i]) * self.diffsigmoid(hiddenout[i])) 
+    # print('gddddd'+str(gdkeep))
+    gdbias = np.flip(gdkeep)
+    print('biasweigth'+str(self.biasweight))
+    print('gdkeppppp'+str(gdbias))
+    for i in range(len(gdbias)):
+      deltaWbias.append((-self.lr)*gdbias[i][0]*np.transpose(self.biasweight[i]))
+    print('deltabias'+str(deltaWbias))
+    print('selfbias'+str(self.biasweight))
+    deltaWbias = np.reshape(deltaWbias,(1,len(deltaWbias)))
+    # self.biasweight = np.reshape(self.biasweight,(len(self.biasweight),1))
+    self.biasweight = toarr(self.biasweight)
+    print(self.biasweight.shape)
+    print('deltabias'+str(deltaWbias))
+    self.biasweight = self.biasweight +(self.momentumrate*(deltaWbias-self.biasweight))+deltaWbias
+
+    gdinput = gdkeep[-1]
+    gdkeep.pop()  
+    # print(gdinput)
+    # print(self.weigths)
+    # print(len(gdkeep))
+    # # print(len(tofinddeltaW))
+    # print(self.biasweight)
+    for i in range(len(tofinddeltaW)):
+      # print(str(tofinddeltaW[i])+'**********'+str(gdkeep[i]))
+      deltaW.append((-self.lr)*tofinddeltaW[i]*np.transpose(gdkeep[i]))
+      # resoutnode = self.weigths[-1] + deltaWout + self.momentumrate
+    deltaW.append((-self.lr)*np.reshape(xinput,(len(xinput),1))*np.transpose(gdinput))
+    # deltaW[-1] = np.reshape(deltaW[-1][0],(8,1))
+    # print('deltaW'+str(deltaW[2][0]))
+    # print('W'+str(self.weigths[0][0]))
+    deltaW = np.flip(deltaW)
+      
+    if self.deltaWl ==0:
+      self.deltaWl = deltaW
+    print('deltaW'+str(deltaW))
+    print('laaassstt'+str(self.deltaWl))
+    self.weigths = self.weigths +(self.momentumrate*(deltaW-self.deltaWl))+deltaW
+    self.deltaWl = deltaW
+    # print('new weight'+str(self.weigths))
+    return self.weigths
 
   def sigmoid(self,s):
     return 1/(1+np.exp(-s))
@@ -228,40 +303,81 @@ class NN():
 # for i in range(hidden_layers):
 #   hidden_node.append(int(input('num node'+str(i+1)+'  = ')))
 # print(hidden_node)
+epoch = 284
+epc = 0
+errorcatch = []
+reserror = []
+
 hidden_layers = 2
 hidden_node = [2,2]
 learningrate = 0.2
-momentumrate = 0.2 
+momentumrate = 0.02 
+error = 100
+firstround = 1
+
 
 #data
 data = splitdata(read_file('Flood_dataset.txt'))
-data = retype(data)
+data = retype(data) #str to node
 
 #keep min,max of data
 MAX = findmax2D(data)
 MIN = findmin2D(data)
 
 #change data formation
-data = Normalization(data,MAX,MIN)
-train,test = crossVar(data)
+data = Normalization(data,MAX,MIN) # normalize data to value in data in -1 to 1 
+train,test = crossVar(data) #Crossvalidation split test train  (test 1 in 10) (train 9 in 10)
 train_x,train_y = splitIO(train)
 train_x = toarr(train_x)
 train_y = toarr(train_y)
+test_x,test_y = splitIO(test)
+test_x = toarr(test_x)
+test_y = toarr(test_y)
 
 # [print(x) for x in train]
 
 weigths = initial_weigths(train_x,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
 print(type(weigths[0]))
 bias = initial_bias(hidden_node,hidden_layers)
+biasweight = initial_bias(hidden_node, hidden_layers)
 # print(bias)
 # print(weigths)
 
 
 
 #NN
-NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,momentumrate)
-# # for i in train_x:
-yt =  NN1.feedfoward(train_x[0])
-out = NN1.backward(yt,train_y[0])
+NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate)
+# for i in range(len(train_x)):
+
+while epc<epoch:
+  for i in range(len(train_x)):#train
+    yt =  NN1.feedfoward(train_x[i])
+    outweights = NN1.backward(yt,train_y[i],train_x[i],firstround)
+    errorcatch.append(NN1.errorrate(yt[-1],train_y[i]))
+    epc = epc + 1 
+    print('epc'+str(epc))
+    print(sum(errorcatch)/len(errorcatch))
+    NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate)
+    if epc==epoch:
+      break
+  reserror.append(sum(errorcatch)/len(errorcatch))
+  for j in range(len(test_x)): #test
+    yt = NN1.feedfoward(test_x[j])
+    error = NN1.errorrate(yt[-1],test_y[j])
+    if abs(error) < 0.00001:
+      print('erroe case')
+      break
+    # print(error)
+
+  train,test = crossVar(data) 
+  train_x,train_y = splitIO(train)
+  train_x = toarr(train_x)
+  train_y = toarr(train_y)
+  test_x,test_y = splitIO(test)
+  test_x = toarr(test_x)
+  test_y = toarr(test_y)
+print(sum(reserror)/len(reserror))
+  
+
 
 # print(pre[0])
