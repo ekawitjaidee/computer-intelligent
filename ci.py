@@ -103,9 +103,12 @@ def findmin2D(data):
   return min(m)
 
 #Data Manage
-def crossVar(data):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
+def crossVar(data,keeprandom):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
   r = random.randrange(1,10)
-  
+  while r in keeprandom:
+     r = random.randrange(1,11)
+  keeprandom.append(r)
+  print('kepprand'+str(keeprandom))
   # r=1
   # print(r)
   test = []
@@ -181,14 +184,16 @@ class NN():
       dotres = np.dot(dotres,self.weigths[dotloop]) 
       # print('dotress'+str(dotres))
       # print('biasss'+str(self.bias[dotloop][0]))
-      # print(dotres.shape)
+      # print(dotres)
       # print(self.bias[dotloop][0].shape)
       
       # dotres = dotres + (self.bias[dotloop][0] * self.biasweight[dotloop][0])
+      # print('aaaa'+str(self.biasweight[dotloop][0]))
       dotres = dotres +  self.biasweight[dotloop][0]
       
       # print('plus bias'+str(dotres))
       dotres = self.sigmoid(dotres)
+      # print('bbbb'+str(dotres))
       result = np.reshape(dotres,(len(dotres),1))
       # print('after'+str(result))
       feedlayer.append(result)
@@ -239,18 +244,47 @@ class NN():
       gdkeep.append(np.dot(hdweight[i] ,gdkeep[i]) * self.diffsigmoid(hiddenout[i])) 
     # print('gddddd'+str(gdkeep))
     gdbias = np.flip(gdkeep)
-    print('biasweigth'+str(self.biasweight))
-    print('gdkeppppp'+str(gdbias))
+    # print('biasweigth'+str(self.biasweight))
+    # print('gdkeppppp'+str(gdbias))
     for i in range(len(gdbias)):
       deltaWbias.append((-self.lr)*gdbias[i][0]*np.transpose(self.biasweight[i]))
-    print('deltabias'+str(deltaWbias))
-    print('selfbias'+str(self.biasweight))
-    deltaWbias = np.reshape(deltaWbias,(1,len(deltaWbias)))
+    # print('deltabias'+str(deltaWbias[0]))
+    # print(len(self.biasweight[0]))
+    # print('selfbias'+str(self.biasweight[0].shape[1]))
+    # print('selfbias'+str(np.reshape(self.biasweight[0],(self.biasweight[0].shape[1],1))))
+  
+    # rebiasW = []
+    # keepshape = len(self.biasweight)
+    # for i in self.biasweight:
+    #   rebiasW.append(np.reshape(i,(i.shape[1],1)))
+    # self.biasweight = rebiasW
+
+    # deltaWbias = np.reshape(deltaWbias,(1,len(deltaWbias)))
     # self.biasweight = np.reshape(self.biasweight,(len(self.biasweight),1))
-    self.biasweight = toarr(self.biasweight)
-    print(self.biasweight.shape)
-    print('deltabias'+str(deltaWbias))
-    self.biasweight = self.biasweight +(self.momentumrate*(deltaWbias-self.biasweight))+deltaWbias
+    # self.biasweight = toarr(self.biasweight)
+    # print(self.biasweight.)
+
+    # print('selfbias'+str(self.biasweight))
+    # print('deltabias'+str(deltaWbias))
+    resbiasW = []
+    for i in range(len(self.biasweight)):
+      # print('selfbiasinside'+str(self.biasweight[i]))
+      # print('deltabiasinside'+str(deltaWbias[i]))
+      biasWres = self.biasweight[i] +(self.momentumrate*(deltaWbias[i]-self.biasweight[i]))+deltaWbias[i]
+      resbiasW.append(biasWres)
+    self.biasweight = resbiasW
+    # print('selfbias1'+str(self.biasweight))
+
+    rebiasW = []
+    
+    # print('---'+str(self.biasweight))
+    
+    # rr = np.reshape(self.biasweight,(1,self.biasweight.shape[0]))
+    #ต้องปรับ biasweight ให้เป็นรูปแบบเดิมเหมือนกับตอนเข้าตอนแรกขขขขข
+      
+    # self.biasweight = rr
+
+
 
     gdinput = gdkeep[-1]
     gdkeep.pop()  
@@ -271,12 +305,12 @@ class NN():
       
     if self.deltaWl ==0:
       self.deltaWl = deltaW
-    print('deltaW'+str(deltaW))
-    print('laaassstt'+str(self.deltaWl))
+    # print('deltaW'+str(deltaW))
+    # print('laaassstt'+str(self.deltaWl))
     self.weigths = self.weigths +(self.momentumrate*(deltaW-self.deltaWl))+deltaW
     self.deltaWl = deltaW
     # print('new weight'+str(self.weigths))
-    return self.weigths
+    return self.weigths,self.biasweight
 
   def sigmoid(self,s):
     return 1/(1+np.exp(-s))
@@ -303,10 +337,13 @@ class NN():
 # for i in range(hidden_layers):
 #   hidden_node.append(int(input('num node'+str(i+1)+'  = ')))
 # print(hidden_node)
-epoch = 284
+epoch = 10
 epc = 0
 errorcatch = []
 reserror = []
+keeprandom = []
+sumsqureerror = []
+ressumsqure = 0
 
 hidden_layers = 2
 hidden_node = [2,2]
@@ -326,7 +363,7 @@ MIN = findmin2D(data)
 
 #change data formation
 data = Normalization(data,MAX,MIN) # normalize data to value in data in -1 to 1 
-train,test = crossVar(data) #Crossvalidation split test train  (test 1 in 10) (train 9 in 10)
+train,test = crossVar(data,keeprandom) #Crossvalidation split test train  (test 1 in 10) (train 9 in 10)
 train_x,train_y = splitIO(train)
 train_x = toarr(train_x)
 train_y = toarr(train_y)
@@ -344,6 +381,7 @@ biasweight = initial_bias(hidden_node, hidden_layers)
 # print(weigths)
 
 
+# print('beeeeeeef'+str(biasweight))
 
 #NN
 NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate)
@@ -352,32 +390,38 @@ NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentum
 while epc<epoch:
   for i in range(len(train_x)):#train
     yt =  NN1.feedfoward(train_x[i])
-    outweights = NN1.backward(yt,train_y[i],train_x[i],firstround)
+    outweights,outbiasweights = NN1.backward(yt,train_y[i],train_x[i],firstround)
+    # print('obw'+str(outbiasweights))
     errorcatch.append(NN1.errorrate(yt[-1],train_y[i]))
-    epc = epc + 1 
-    print('epc'+str(epc))
-    print(sum(errorcatch)/len(errorcatch))
-    NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate)
+    
+   
+    # print(sum(errorcatch)/len(errorcatch))
+    NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,outbiasweights,momentumrate)
     if epc==epoch:
       break
   reserror.append(sum(errorcatch)/len(errorcatch))
+  # sumsqureerror.append(sum(map(abs,errorcatch)/2))
+  # ressumsqure = sum(sumsqureerror)/len(train_x)
   for j in range(len(test_x)): #test
     yt = NN1.feedfoward(test_x[j])
     error = NN1.errorrate(yt[-1],test_y[j])
     if abs(error) < 0.00001:
       print('erroe case')
       break
-    # print(error)
+  if len(keeprandom)==10:
+    break
 
-  train,test = crossVar(data) 
+  epc = epc + 1 
+  print('epc'+str(epc))
+  train,test = crossVar(data,keeprandom) 
   train_x,train_y = splitIO(train)
   train_x = toarr(train_x)
   train_y = toarr(train_y)
   test_x,test_y = splitIO(test)
   test_x = toarr(test_x)
   test_y = toarr(test_y)
-print(sum(reserror)/len(reserror))
-  
+print('Sum error = '+str(sum(reserror)/len(reserror)))
+print('sum squre error'+str(ressumsqure))
 
 
 # print(pre[0])
