@@ -108,7 +108,7 @@ def crossVar(data,keeprandom):#สุ่ม10เปอเซ็นของข�
   while r in keeprandom:
      r = random.randrange(1,11)
   keeprandom.append(r)
-  print('kepprand'+str(keeprandom))
+  # print('kepprand'+str(keeprandom))
   # r=1
   # print(r)
   test = []
@@ -337,18 +337,20 @@ class NN():
 # for i in range(hidden_layers):
 #   hidden_node.append(int(input('num node'+str(i+1)+'  = ')))
 # print(hidden_node)
-epoch = 10
+epoch = 10000
 epc = 0
 errorcatch = []
 reserror = []
 keeprandom = []
+
 sumsqureerror = []
+s =[]
 ressumsqure = 0
 
-hidden_layers = 2
-hidden_node = [2,2]
-learningrate = 0.2
-momentumrate = 0.02 
+hidden_layers = 6
+hidden_node = [5,3,4,6,4,2]
+learningrate = -0.5
+momentumrate = 0.4 
 error = 100
 firstround = 1
 
@@ -397,11 +399,13 @@ while epc<epoch:
    
     # print(sum(errorcatch)/len(errorcatch))
     NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,outbiasweights,momentumrate)
-    if epc==epoch:
-      break
+    
   reserror.append(sum(errorcatch)/len(errorcatch))
-  # sumsqureerror.append(sum(map(abs,errorcatch)/2))
-  # ressumsqure = sum(sumsqureerror)/len(train_x)
+  [ s.append((x**2)/2) for x in errorcatch ]
+  sumsqureerror.append(sum(s)/len(train_x))
+  # ressumsqure = sum(sumsqureerror)/len(train_x)  
+  print('Sum error = '+str(sum(reserror)/len(reserror)))
+  print(sumsqureerror) 
   for j in range(len(test_x)): #test
     yt = NN1.feedfoward(test_x[j])
     error = NN1.errorrate(yt[-1],test_y[j])
@@ -409,9 +413,15 @@ while epc<epoch:
       print('erroe case')
       break
   if len(keeprandom)==10:
-    break
+    #  break
+    keeprandom = []
+  if epc==epoch:
+      break
 
   epc = epc + 1 
+  errorcatch = []
+  s = []
+  sumsqureerror = []
   print('epc'+str(epc))
   train,test = crossVar(data,keeprandom) 
   train_x,train_y = splitIO(train)
