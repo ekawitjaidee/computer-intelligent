@@ -1,7 +1,8 @@
 import random
 import numpy as np
 
-
+random.seed(0)
+np.random.seed(0)
 
 #initial
 def read_file(file):
@@ -62,10 +63,10 @@ def findmin2D(data):
 #Data Manage
 def crossVar(data,keeprandom):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
   d = data.copy()
-  r = random.randrange(0,10)
+  r = random.randrange(1,11)
  
   while r in keeprandom:
-     r = random.randrange(0,10)
+     r = random.randrange(1,11)
   keeprandom.append(r)
  
   test = []
@@ -75,7 +76,7 @@ def crossVar(data,keeprandom):#สุ่ม10เปอเซ็นของข�
 
   test = d[(dist-dis):dist]
   del d[(dist-dis):dist]
- 
+
   return d,test
   
 def randdata(data):
@@ -94,6 +95,7 @@ def randdata(data):
   for i in range(len(resdatarand)):
     for j in resdatarand[i]:
       resdata.append(j)
+
   return resdata
 
 def splitdata(data):
@@ -156,10 +158,11 @@ class NN():
      
       feedlayer.append(result)
 
+    
     return feedlayer #sigmoid at hidden node and output node
 
-  def backward(self,yt,desire,xinput,firstround):
-
+  def backward(self,yt,desire,xinput):
+  
     gdkeep  =[]    
     deltaW = []
     deltaWbias = []
@@ -192,28 +195,21 @@ class NN():
       deltaWbias.append((-self.lr)*gdbias[i][0]*self.biasweight[i])
   
 
-    # print('selfbias'+str(self.biasweight))
-    # print('deltabias'+str(deltaWbias))
     if self.deltabiasWl == 0:
-      print(1)
       self.deltabiasWl = deltaWbias
 
     resbiasW = []
     for i in range(len(self.biasweight)):
-      # print('selfbiasinside'+str(self.biasweight[i]))
-      # print('deltabiasinside'+str(deltaWbias[i]))
       biasWres = self.biasweight[i] +(self.momentumrate*(deltaWbias[i]-self.deltabiasWl[i]))+deltaWbias[i]
       resbiasW.append(biasWres)
+
     self.deltabiasWl = deltaWbias
     self.biasweight = resbiasW
-    # print('selfbias1'+str(self.biasweight))
     rebiasW = []
-
 
     gdinput = gdkeep[-1]
     gdkeep.pop()  
     
-    # print(self.biasweight)
     for i in range(len(tofinddeltaW)):  
       deltaW.append((-self.lr)*tofinddeltaW[i]*np.transpose(gdkeep[i]))
     
@@ -221,7 +217,6 @@ class NN():
     deltaW = np.flip(deltaW)
       
     if self.deltaWl == 0:
-      print(2)
       self.deltaWl = deltaW
  
     self.weigths = self.weigths +(self.momentumrate*(deltaW-self.deltaWl))+deltaW
@@ -234,16 +229,12 @@ class NN():
 
   def errorrate(self,yt,desire):
     et = desire-yt
-    # print(et)
     return et
   
   def diffsigmoid(self, s):
     return (s) * (1 - (s))
 
       
-
-
-
       
 #main
 
@@ -256,25 +247,25 @@ class NN():
 epoch = 100
 oncescross  = epoch/10
 epc = 0
+
 errorcatch = []
-reserror = []
 keeprandom = []
 errorcase = 0
-
+rootmeansqure = 0
+rms = []
 sumsqureerror = []
+avgsumsqure = []
+avgsumsqureres = []
 s =[]
 ressumsqure = 0
 
 
-# hidden_layers = 2
-# hidden_node = [2,2]
-hidden_layers = 6
-hidden_node = [5,3,4,6,4,2]
-learningrate = -0.5
-momentumrate = 0.4 
+hidden_layers = 4
+hidden_node = [5,3,4,2]
+learningrate = 0.02
+momentumrate = 0.01 
 errortest = []
 avgerrortest = []
-firstround = 1
 
 deltaWl = 0
 deltabiasWl = 0
@@ -298,74 +289,61 @@ test_x,test_y = splitIO(test)
 test_x = toarr(test_x)
 test_y = toarr(test_y)
 
-
-# [print(x) for x in train]
-
 weigths = initial_weigths(train_x,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
 print(type(weigths[0]))
 bias = initial_bias(hidden_node,hidden_layers)
 biasweight = initial_bias(hidden_node, hidden_layers)
-# print(bias)
-# print(weigths)
-
-
-# print('beeeeeeef'+str(biasweight))
 
 #NN
 NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate,deltaWl,deltabiasWl)
 deltaWl = 1
 deltabiasWl = 1
-# for i in range(len(train_x)):
 
 while epc<epoch:
   for j in range(int(oncescross)):
-    reserror = []
-    errorcatch = []
-    s = []
-    sumsqureerror = []
     for i in range(len(train_x)):#train
       yt =  NN1.feedfoward(train_x[i])
-      outweights,outbiasweights,deltaWl,deltabiasWl = NN1.backward(yt,train_y[i],train_x[i],firstround)
-      # print('check'+str(i))
+      outweights,outbiasweights,deltaWl,deltabiasWl = NN1.backward(yt,train_y[i],train_x[i])
       errorcatch.append(NN1.errorrate(yt[-1],train_y[i]))
-      # print(sum(errorcatch)/len(errorcatch))
       ertr = NN1.errorrate(yt[-1],train_y[i])
       NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,outbiasweights,momentumrate,deltaWl,deltabiasWl)
     train = randdata(train)
     train_x,train_y = splitIO(train)
     epc = epc + 1 
+
+    [ s.append((x**2)) for x in errorcatch ]
+    sumsqureerror = sum(s)/2
+    avgsumsqure.append(sumsqureerror)   
+    print('sum squre'+str(sumsqureerror)) 
+    
+    rootmeansqure = np.sqrt(sum(s)/len(s))
+    rms.append(rootmeansqure)     
+    
+    sumsqureerror = []
+    s = []
+    errorcatch = []
+
     print('epc'+str(epc))
     if epc==epoch:
       break
-
-  # reserror.append(sum(errorcatch)/len(errorcatch))
-  [ s.append((x**2)) for x in errorcatch ]
-  sumsqureerror.append((sum(s)/2)/len(train_x))
-  ressumsqure = sum(sumsqureerror)/len(train_x)  
-  # print('Sum error = '+str(reserror))
-  print('sum squre'+str(sumsqureerror)) 
   
+  avgsumsqureres.append(sum(avgsumsqure)/len(avgsumsqure))
+  print('avgsumsqure',sum(avgsumsqure)/len(avgsumsqure))
+  avgsumsqure = []
 
   for j in range(len(test_x)): #test
     yt = NN1.feedfoward(test_x[j])
     errortest.append(NN1.errorrate(yt[-1],test_y[j]))
     erts = NN1.errorrate(yt[-1],train_y[i])
-    # print('error'+str(errortest))
     if abs(errortest[0]) < 0.00001:
       print('erroe case')
       errorcase = errorcase + 1
       break
   avgerrortest.append(sum(errortest)/len(errortest))
-  # print('ertr',ertr)
-  # print('erts',erts)
-
-  if len(keeprandom)==10:
-    #  break
+  
+  print(keeprandom)
+  if len(keeprandom)==10: #to Cross validation
     keeprandom = []
-
-
- 
-   
 
   train,test = crossVar(data,keeprandom) 
   train = randdata(train)
@@ -375,10 +353,9 @@ while epc<epoch:
   test_x,test_y = splitIO(test)
   test_x = toarr(test_x)
   test_y = toarr(test_y)
-# print('Sum error = '+str(sum(reserror)/len(reserror)))
-# print('sum squre error'+str(ressumsqure))
-# print('errorcase'+str(errorcase))
-# print('Average errortest'+str(avgerrortest))
-# print('Averrage'+str(sum(avgerrortest)/len(avgerrortest)))
+# print('rts 10 Cross',rms)
+# print(sum(rms)/len(rms))
+print('avgsumsqure',avgsumsqureres)
 
-# print(pre[0])
+
+
