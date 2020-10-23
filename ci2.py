@@ -1,20 +1,88 @@
-import random
 import numpy as np
-import matplotlib.pyplot as pl
+import random
+import matplotlib.pyplot as plt
 
-# random.seed(0)
-# np.random.seed(0)
+def read_input(fn):
+  f = open(fn,'r')
+  # print(f.read())
+  d=[]
+  d.append(f.read().splitlines())
+  # print(d)
+  p = []
+  xinput = []
+  desire = []
 
-#initial
-def read_file(file):
-  f = open(str(file),'r')
-  t = []
+  for i in range(len(d[0])):
+    if i%3==0:
+      p.append(d[0][i])
+    elif i%3==1:
+      xinput.append(d[0][i].split('  '))
+    elif i%3==2:
+      desire.append(d[0][i].split(' '))
+  # print(p)
+  # print(xinput)
+  # print(desire)
+  return xinput,desire
 
-  for x in f:
-    t.append(x)
-  del t[0] #ลบสองบรรทัดบนสุด
-  del t[0]
-  return t
+def str_tofloat(data):
+  x = data.copy()
+  return np.array(list(map(lambda s: list(map(float, s)), x)))
+
+def normalize(d):
+    x = d.copy()
+    for i in x :
+      if i[0] == 0:
+        i[0] = 0.1
+      else:
+        i[0] = 0.9
+        
+      if i[1] == 0:
+        i[1] = 0.1
+      else:
+        i[1] = 0.9
+        
+    return x
+
+def crossVar(data,data2,keeprandom):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
+  d = data.copy()
+  d2 = data2.copy()
+  r = random.randrange(1,11)
+ 
+  while r in keeprandom:
+     r = random.randrange(1,11)
+  keeprandom.append(r)
+ 
+  test = []
+
+  dis = round(len(d)/10)
+  dist = dis * r   #ระยะของข้อมูลที่จะแบ่ง
+
+  test = d[(dist-dis):dist]
+  test2 = d2[(dist-dis):dist]
+  print(dist)
+  d = np.delete(d,slice((dist-dis),dist),axis=0)
+  d2 = np.delete(d2,slice((dist-dis),dist),axis=0)
+
+  return d,test,d2,test2
+
+def randdata(data):
+  d  = data.copy()
+  resdatarand = []
+  rang = int(len(d)/10)
+  krang = []
+  r2 = random.randrange(0,10)
+  for i in range(10):#cross 10 part  
+    while r2 in krang:
+      r2 = random.randrange(0,10)
+    krang.append(r2)
+  resdata = []
+  for i in krang:
+    resdatarand.append(d[i*rang:(i*rang)+rang])
+  for i in range(len(resdatarand)):
+    for j in resdatarand[i]:
+      resdata.append(j)
+
+  return resdata
 
 def initial_weigths(input_node,hidden_node,hidden_layer):
   node  = len(input_node[0])
@@ -24,7 +92,7 @@ def initial_weigths(input_node,hidden_node,hidden_layer):
 
   [cp_node.append(i) for i in hidden_node]
   
-  hidden_node.append(1)#append output node to make weigths
+  hidden_node.append(2)#append output node to make weigths
   # print(cp_node)
   # print(hidden_node)
 
@@ -48,88 +116,7 @@ def initial_bias(hidden_node,hidden_layer):
   # print(resbias)
   return resbias
 
-#tools
-def findmax2D(data):
-  m = []
-  for i in data:
-    m.append(max(i))
-  return max(m)
 
-def findmin2D(data):
-  m = []
-  for i in data:
-    m.append(min(i))
-  return min(m)
-
-#Data Manage
-def crossVar(data,keeprandom):#สุ่ม10เปอเซ็นของข้อมูลเพื่อแบ่งเป็นtest
-  d = data.copy()
-  r = random.randrange(1,11)
- 
-  while r in keeprandom:
-     r = random.randrange(1,11)
-  keeprandom.append(r)
- 
-  test = []
-
-  dis = round(len(d)/10)
-  dist = dis * r   #ระยะของข้อมูลที่จะแบ่ง
-
-  test = d[(dist-dis):dist]
-  del d[(dist-dis):dist]
-
-  return d,test
-  
-def randdata(data):
-  d  = data.copy()
-  resdatarand = []
-  rang = int(len(d)/10)
-  krang = []
-  r2 = random.randrange(0,10)
-  for i in range(10):#cross 10 part  
-    while r2 in krang:
-      r2 = random.randrange(0,10)
-    krang.append(r2)
-  resdata = []
-  for i in krang:
-    resdatarand.append(d[i*rang:(i*rang)+rang])
-  for i in range(len(resdatarand)):
-    for j in resdatarand[i]:
-      resdata.append(j)
-
-  return resdata
-
-def splitdata(data):
-  x = []
-  r = []
-  for i in data:
-    x = i.split()
-    r.append(x)
-  return r
-
-def splitIO(data):#แยกinputออกจากdesireoutput
-  d = []
-  desire = []
-  for i in data:
-    desire.append(i[8])
-    d.append(i[:8])
-  # print(str(d[-1])+str(desire[-1]))
-  return d,desire
-
-def retype(data):#change str to float
-  return list(map(lambda sl: list(map(float, sl)), data))  
-
-def Normalization(data,M,m):
-  data = np.array(data)
-  res = (data -m)/(M-m)
-  return res.tolist()
-
-def toarr(data):
-  return np.array(data) 
-
-
-
-#NN
 class NN():
   def __init__(self,weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate,deltaWl,deltabiasWl):
     self.hidden_node = hidden_node #[2,2]
@@ -149,7 +136,7 @@ class NN():
     dotres = data
 
     for dotloop in range(self.hidden_layers+1): # test case มีสองhiddenlayer แสดงว่าต้องdot3ครั้ง จึงเท่ากับhiddenlayer+1
-      
+ 
       dotres = np.dot(dotres,self.weigths[dotloop]) 
       dotres = dotres +  self.biasweight[dotloop][0]
       dotres = self.sigmoid(dotres)
@@ -214,8 +201,8 @@ class NN():
     deltaW.append((-self.lr)*np.reshape(xinput,(len(xinput),1))*np.transpose(gdinput))
     deltaW = np.flip(deltaW)
       
-    if self.deltaWl == 0:
-      self.deltaWl = deltaW
+    # if self.deltaWl == 0:
+    #   self.deltaWl = deltaW
  
     self.weigths = self.weigths +(self.momentumrate*(deltaW-self.deltaWl))+deltaW
     self.deltaWl = deltaW
@@ -228,20 +215,40 @@ class NN():
   def errorrate(self,yt,desire):
     et = desire-yt
     return et
+
+  def errorcon(self,yt,desire):
+    et = desire[0]-yt[0]
+    et1 = desire[1]-yt[1]
+    return et  ,et1
   
   def diffsigmoid(self, s):
     return (s) * (1 - (s))
 
-      
-      
-#main
+def predict(y):
+  if y[0] > y[1]:
+    o = [0.9,0.1]
+  else:
+    o = [0.1,0.9]
+  return o
 
-#input
-# hidden_layers = int(input('layer = '))
-# hidden_node = []
-# for i in range(hidden_layers):
-#   hidden_node.append(int(input('num node'+str(i+1)+'  = ')))
-# print(hidden_node)
+def confusion(d,o):
+  tp,fp,fn,tn = 0,0,0,0
+  for i in range(len(d)):
+    if d[i] == [0.9, 0.1]:
+      if o[i] == [0.9, 0.1]:
+        tp = tp + 1
+      else:
+        fp = fp + 1
+    else:
+      if o[i] == [0.1, 0.9]:
+        tn = tn + 1
+      else:
+        fn = fn + 1
+  return tp,fp,fn,tn
+
+#Main
+xinput,desire = read_input('cross.txt')
+#variables
 epoch = 100
 oncescross  = epoch/10
 epc = 0
@@ -256,57 +263,52 @@ avgsumsqure = []
 avgsumsqureres = []
 s =[]
 ressumsqure = 0
+deltaWl = 0
+deltabiasWl = 0
 
-
-hidden_layers = 4
-hidden_node = [5,3,4,2]
+hidden_layers = 2
+hidden_node = [2,2]
 learningrate = 0.02
 momentumrate = 0.01 
 errortest = []
 avgerrortest = []
 
-deltaWl = 0
-deltabiasWl = 0
+#do
+xinput = str_tofloat(xinput)
+desire = str_tofloat(desire)
+desire = normalize(desire)
+print('xt',len(xinput))
+print('xtest',len(desire))
+xtrain,xtest,dtrain,dtest = crossVar(xinput,desire,keeprandom)
 
-#data
-data = splitdata(read_file('Flood_dataset.txt'))
-data = retype(data) #str to node
+print('xt',len(xtrain))
+print('xtest',len(xtest))
 
-#keep min,max of data
-MAX = findmax2D(data)
-MIN = findmin2D(data)
 
-#change data formation
-data = Normalization(data,MAX,MIN) # normalize data to value in data in -1 to 1 
-train,test = crossVar(data,keeprandom) #Crossvalidation split test train  (test 1 in 10) (train 9 in 10)
-train = randdata(train)
-train_x,train_y = splitIO(train)
-train_x = toarr(train_x)
-train_y = toarr(train_y)
-test_x,test_y = splitIO(test)
-test_x = toarr(test_x)
-test_y = toarr(test_y)
-
-weigths = initial_weigths(train_x,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
+weigths = initial_weigths(xtrain,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
 print(type(weigths[0]))
 bias = initial_bias(hidden_node,hidden_layers)
 biasweight = initial_bias(hidden_node, hidden_layers)
 
-#NN
+
 NN1 = NN(weigths,hidden_node,hidden_layers,learningrate,bias,biasweight,momentumrate,deltaWl,deltabiasWl)
 deltaWl = 1
 deltabiasWl = 1
 
+out = NN1.feedfoward(xtrain[0])
+# print(out)
 while epc<epoch:
   for j in range(int(oncescross)):
-    for i in range(len(train_x)):#train
-      yt =  NN1.feedfoward(train_x[i])
-      outweights,outbiasweights,deltaWl,deltabiasWl = NN1.backward(yt,train_y[i],train_x[i])
-      errorcatch.append(NN1.errorrate(yt[-1],train_y[i]))
-      ertr = NN1.errorrate(yt[-1],train_y[i])
+    for i in range(len(xtrain)):#train
+      yt =  NN1.feedfoward(xtrain[i])
+      outweights,outbiasweights,deltaWl,deltabiasWl = NN1.backward(yt,dtrain[i],xtrain[i])
+      print(yt[-1],dtrain[i])
+      pdValue = predict(yt[-1])
+      errorcatch.append(NN1.errorrate(yt[-1],dtrain[i]))
+      ertr = NN1.errorrate(yt[-1],dtrain[i])
       NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,outbiasweights,momentumrate,deltaWl,deltabiasWl)
-    train = randdata(train)
-    train_x,train_y = splitIO(train)
+    xtrain = randdata(xtrain)
+    # xtrain,train_y = splitIO(train)
     epc = epc + 1 
 
     [ s.append((x**2)) for x in errorcatch ]
@@ -329,14 +331,14 @@ while epc<epoch:
   print('avgsumsqure',sum(avgsumsqure)/len(avgsumsqure))
   avgsumsqure = []
 
-  for j in range(len(test_x)): #test
-    yt = NN1.feedfoward(test_x[j])
-    errortest.append(NN1.errorrate(yt[-1],test_y[j]))
-    erts = NN1.errorrate(yt[-1],train_y[i])
-    if abs(errortest[0]) < 0.00001:
-      print('erroe case')
-      errorcase = errorcase + 1
-      break
+  for j in range(len(xtest)): #test
+    yt = NN1.feedfoward(xtest[j])
+    errortest.append(NN1.errorrate(yt[-1],dtest[j]))
+    erts = NN1.errorrate(yt[-1],dtrain[i])
+    # if abs(errortest[0]) < 0.00001:
+    #   print('erroe case')
+    #   errorcase = errorcase + 1
+    #   break
   [ s.append((x**2)) for x in errortest ]
   print('sumsqure TEST',(sum(s)/len(s)))
   avgerrortest.append(sum(s)/len(s))
@@ -344,27 +346,12 @@ while epc<epoch:
   if len(keeprandom)==10: #to Cross validation
     keeprandom = []
 
-  train,test = crossVar(data,keeprandom) 
-  train = randdata(train)
-  train_x,train_y = splitIO(train)
-  train_x = toarr(train_x)
-  train_y = toarr(train_y)
-  test_x,test_y = splitIO(test)
-  test_x = toarr(test_x)
-  test_y = toarr(test_y)
+  xtrain,xtest,dtrain,dtest = crossVar(xinput,desire,keeprandom) 
+  xtrain = randdata(xtrain)
+  # xtrain,dtrain = splitIO(train)
+  # xtest,test_y = splitIO(test)
+  
 # print('rts 10 Cross',rms)
 # print(sum(rms)/len(rms))
 print('avgsumsqure',avgsumsqureres)
 print('avgtest',avgerrortest)
-
-y = []
-[y.append(i[0]) for i in avgsumsqureres]
-# print("y",y)
-x = [1,2,3,4,5,6,7,8,9,10]
-pl.plot(x,y,label='Train',color='deepskyblue',marker='o',markerfacecolor='green',markersize=8)
-pl.legend()
-pl.grid()
-pl.show()
-
-
-
