@@ -52,15 +52,12 @@ def initial_weigths(input_node,hidden_node,hidden_layer):
   [cp_node.append(i) for i in hidden_node]
   
   hidden_node.append(2)#append output node to make weigths
-  # print(cp_node)
-  # print(hidden_node)
 
   layer_count = []
 
   # np.random.seed(1)
   for i in range(len(hidden_node)):
     weigths = 2 * np.random.random((cp_node[i], hidden_node[i])) - 1
-    # print(weigths)
     layer_count.append(weigths)
   
   return layer_count
@@ -88,13 +85,11 @@ def crossVar(data,data2,keeprandom):#สุ่ม10เปอเซ็นขอ�
   return d,test,d2,test2
 
 def initial_bias(hidden_node,hidden_layer):
-  # print(hidden_node)
   resbias = []
   for i in range(len(hidden_node)):
     bias = 2 * np.random.random((1, hidden_node[i])) - 1
-    # print(bias.shape)
     resbias.append(bias)
-  # print(resbias)
+
   return resbias
 
 def randdata(data):
@@ -136,9 +131,7 @@ class NN():
     dotres = data
 
     for dotloop in range(self.hidden_layers+1): # test case มีสองhiddenlayer แสดงว่าต้องdot3ครั้ง จึงเท่ากับhiddenlayer+1
-      print(self.weigths,'qqqqq')
       dotres = np.dot(dotres,self.weigths[dotloop]) 
-      dotres = dotres +  self.biasweight[dotloop][0]
       dotres = self.sigmoid(dotres)
       result = np.reshape(dotres,(len(dotres),1))
      
@@ -154,7 +147,6 @@ class NN():
 
     tofinddeltaW = []
     [tofinddeltaW.append(i)for i in yt[:-1]]
-    # tofinddeltaW = np.flip(tofinddeltaW)
 
     #gradient
     #re weigth before output node
@@ -172,24 +164,7 @@ class NN():
   
     for i in range(len(hiddenout)):
       gdkeep.append(np.dot(hdweight[i] ,gdkeep[i]) * self.diffsigmoid(hiddenout[i])) 
- 
-    gdbias = gdkeep
-  
-    for i in range(len(gdbias)):
-      deltaWbias.append((-self.lr)*gdbias[i][0]*np.transpose(self.biasweight[i]))
-  
 
-    if self.deltabiasWl == 0:
-      self.deltabiasWl = deltaWbias
-
-    resbiasW = []
-    for i in range(len(self.biasweight)):
-      biasWres = np.transpose(self.biasweight[i]) +(self.momentumrate*(deltaWbias[i]-self.deltabiasWl[i]))+deltaWbias[i]
-      resbiasW.append(biasWres)
-
-    self.deltabiasWl = deltaWbias
-    self.biasweight = resbiasW
-    # rebiasW = []
 
     gdinput = gdkeep[-1]
     gdkeep.pop()  
@@ -200,11 +175,7 @@ class NN():
     
     deltaW.append((-self.lr)*np.reshape(xinput,(len(xinput),1))*np.transpose(gdinput))
     deltaW = np.flip(deltaW)
-
-
-    O  = self.momentumrate*(deltaW-self.deltaWl)+np.transpose(deltaW)
-    # print(self.weigths)
-    # print(O)
+   
     self.weigths = self.weigths 
     self.deltaWl = deltaW
   
@@ -224,31 +195,46 @@ class NN():
 
 def predict(y):
   if y[0] > y[1]:
-    o = [0.9,0.1]
+    predict = [0.9,0.1]
   else:
-    o = [0.1,0.9]
-  return o
+    predict = [0.1,0.9]
+  return predict
 
-def confusion(d,o):
-  tp,fp,fn,tn = 0,0,0,0
+def confusionMatrix(d,o):
+  truepos,falsepos,falseneg,trueneg = 0,0,0,0
   for i in range(len(d)):
-    if d[i] == [0.9, 0.1]:
-      if o[i] == [0.9, 0.1]:
-        tp = tp + 1
+    if d[i][0]>0.5 and d[i][1]<0.5:
+      if o[i][0]>0.5 and o[i][1]<0.5:
+        truepos = truepos + 1
       else:
-        fp = fp + 1
+        falsepos = falsepos + 1
     else:
       if o[i] == [0.1, 0.9]:
-        tn = tn + 1
+        trueneg = trueneg + 1
       else:
-        fn = fn + 1
-  return tp,fp,fn,tn
+        falseneg = falseneg + 1
+  return truepos,falsepos,falseneg,trueneg
 
 #Main
 xinput,desire = read_input('cross.txt')
 
+#input
+hidden_layers = int(input('layer = '))
+hidden_node = []
+
+for i in range(hidden_layers):
+  hidden_node.append(int(input('num node :'+str(i+1)+'  = ')))
+print(hidden_node)
+learningrate = float(input('learningrate = '))
+momentumrate = float(input('momentumrate = ')) 
+epoch = int(input('Epoch = '))
+
 #variables
 epoch = 100
+hidden_layers = 2
+hidden_node = [2,3]
+learningrate = 0.02
+momentumrate = 0.01 
 oncescross  = epoch/10
 epc = 0
 
@@ -267,22 +253,19 @@ deltabiasWl = 0
 pdValue = []
 acc = []
 
-hidden_layers = 2
-hidden_node = [2,3]
-learningrate = 0.02
-momentumrate = 0.01 
+
 errortest = []
 avgerrortest = []
 
 xinput = str_tofloat(xinput)
 desire = str_tofloat(desire)
-desire = normalize(desire)
+# desire = normalize(desire)
 
 xtrain,xtest,dtrain,dtest = crossVar(xinput,desire,keeprandom)
 
 
 
-weigths = initial_weigths(xtrain,hidden_node,hidden_layers) #(data,hiddennode = [2,2],hiddenlayer = 2)
+weigths = initial_weigths(xtrain,hidden_node,hidden_layers) 
 
 bias = initial_bias(hidden_node,hidden_layers)
 biasweight = initial_bias(hidden_node, hidden_layers)
@@ -306,17 +289,14 @@ while epc<epoch:
       errorcatch.append(NN1.errorrate(yt[-1],dtrain[i]))
       ertr = NN1.errorrate(yt[-1],dtrain[i])
       NN1 = NN(outweights,hidden_node,hidden_layers,learningrate,bias,outbiasweights,momentumrate,deltaWl,deltabiasWl)
-    
-    # print('typp',type(pdValue),type(dtrain))
-    tp,fp,fn,tn = confusion(dtrain.tolist(),pdValue)
-    print("convolutionalmatrix  0   1")
+    tp,fp,fn,tn = confusionMatrix(dtrain.tolist(),pdValue)
+    print("confusionmatrix  0   1")
     print(' 0                 ',tp,'   ',fp)
     print(' 1                 ',fn,'   ',tn)
     acc.append(((tp+tn)/len(dtrain)*100))
     print('Accurancy',((tp+tn)/len(dtrain)*100),'%')
     
     xtrain = randdata(xtrain)
-    # xtrain,train_y = splitIO(train)
     epc = epc + 1 
 
     [ s.append((x**2)) for x in errorcatch ]
@@ -343,10 +323,6 @@ while epc<epoch:
     yt = NN1.feedfoward(xtest[j])
     errortest.append(NN1.errorrate(yt[-1],dtest[j]))
     erts = NN1.errorrate(yt[-1],dtrain[i])
-    # if abs(errortest[0]) < 0.00001:
-    #   print('erroe case')
-    #   errorcase = errorcase + 1
-    #   break
   [ s.append((x**2)) for x in errortest ]
   print('sumsqure TEST',(sum(s)/len(s)))
   avgerrortest.append(sum(s)/len(s))
@@ -356,5 +332,3 @@ while epc<epoch:
 
   xtrain,xtest,dtrain,dtest = crossVar(xinput,desire,keeprandom) 
   xtrain = randdata(xtrain)
-  # xtrain,dtrain = splitIO(train)
-  # xtest,test_y = splitIO(test)
