@@ -107,9 +107,23 @@ def sortfitness(poppulation,mae):
 def crossover(poppulation):
   rand1 = np.random.randint(0,9)
   rand2 = np.random.randint(0,9)
-  print(rand1,rand2)
-  return 1
+  while rand2 == rand1:
+     rand2 = np.random.randint(0,9)
+  weight1_2 = poppulation[rand1][int(len(poppulation[rand1])/2):]
+  weight1_1 = poppulation[rand1][:int(len(poppulation[rand1])/2)]
+  weight2_2 = poppulation[rand1][int(len(poppulation[rand2])/2):]
+  weight2_1 = poppulation[rand1][:int(len(poppulation[rand2])/2)]
+  poppulation[rand1] = np.array(weight1_1+weight2_2)
+  poppulation[rand2] = np.array(weight2_1+weight1_2)
 
+  return poppulation
+
+def mutate(poppulation,hidden_node,hidden_layer,output_node):
+  for pop in range(len(poppulation)):
+    chance = np.random.randint(0,4)
+    if chance ==1 :
+      poppulation[pop] = initial_weigths(input_node,hidden_node,hidden_layer,output_node)
+  return poppulation
 
 ID,M,feature = data()
 feature = np.array(list(map(lambda x: list(map(float, x)), feature)))
@@ -119,11 +133,11 @@ M = normalizationClass(M)
 
 poppulation = []
 individual = 10
-generation = 10
+generation = 15
 
 
-hidden_layer = 2
-hidden_node = [2,3]
+hidden_layer = 5
+hidden_node = [4,6,2,3,4]
 input_node = 30
 output_node = 1
 K = 10 #10Cross
@@ -141,11 +155,11 @@ for k in range (K):
   xcopy,ycopy = x.copy(),y.copy()
   x_test,y_test = xcopy[i],ycopy[i]
   x_train,y_train = Crossvalidation(xcopy,ycopy,k)
-  print(x_train.shape)
+  # print(x_train.shape)
   for g in range(generation):
     shuffle(x_train,y_train)
     mae =[]
-    print(x_train.shape)
+    # print(x_train.shape)
     for p in range (len(poppulation)):
       ber = 0
       for train in range(len(x_train)):
@@ -154,11 +168,13 @@ for k in range (K):
         ber += abs(er)
       mae.append(1/(sum(ber)/len(x_train)))
     poppulation = sortfitness(poppulation,mae)
-    
-    ertests = []
-    for test in range(len(x_test)):
-          ytest = NeuralNetwork(x_test[test],poppulation[np.argmin(mae)],hidden_layer)
-          ert = errorrate(yh[-1],y_test[test])
-          ertests.append(abs(ert))
-    ertestall = sum(ertests)/len(x_test)
-    print('Cross (',k+1,') Train Error = ',mae[np.argmin(mae)][-1],' Test Error = ',ertestall)
+    # poppulation = crossover(poppulation)
+    poppulation = mutate(poppulation,hidden_node,hidden_layer,output_node)
+
+  ertests = []
+  for test in range(len(x_test)):
+    ytest = NeuralNetwork(x_test[test],poppulation[np.argmin(mae)],hidden_layer)
+    ert = errorrate(yh[-1],y_test[test])
+    ertests.append(abs(ert))
+  ertestall = sum(ertests)/len(x_test)
+  print('Cross (',k+1,') fitness = ',mae[np.argmin(mae)][-1],' fitness Test = ',1/ertestall)
